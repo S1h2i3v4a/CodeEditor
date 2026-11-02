@@ -13,21 +13,20 @@
 
 ---
 
-## 📑 Project Deliverables & Reports
+## 📑 Project Documentation & Deliverables
 
-The project and training documentation reports (clean versions, zero college branding, starting directly with Index):
+Comprehensive, structured project documentation tailored specifically for **CodeEditor Pro** (starts directly from Index, zero college branding, high-resolution architecture diagrams and lifecycle flowcharts):
 
-- 📄 **Project Report PDF**: [`docs/SmartCredit_Project_Report.pdf`](docs/SmartCredit_Project_Report.pdf) (14 pages, Direct Index, Embedded Flowchart & UI Screenshots)
-- 📊 **Presentation Slides PDF**: [`docs/smartCredit.pdf`](docs/smartCredit.pdf) (10 slides, Direct Table of Contents, Embedded DFD & ROC Curves)
-- 💻 **Presentation Slides PPTX**: [`docs/smartCredit.pptx`](docs/smartCredit.pptx) (Editable PowerPoint Presentation)
-- 📑 **Presentation (With Title Slide) PDF**: [`docs/SmartCredit_Presentation_With_Title.pdf`](docs/SmartCredit_Presentation_With_Title.pdf)
+- 📄 **Project Report PDF**: [`docs/CodeEditor_Project_Report.pdf`](docs/CodeEditor_Project_Report.pdf) (14 pages, Direct Index start, Chapter 1 to 6, embedded Flowchart & UI Diagrams)
+- 📊 **Project Presentation PDF**: [`docs/CodeEditor_Presentation.pdf`](docs/CodeEditor_Presentation.pdf) (11 widescreen slides, Direct Table of Contents, embedded DFD & Flowchart)
+- 💻 **Project Presentation PPTX**: [`docs/CodeEditor_Presentation.pptx`](docs/CodeEditor_Presentation.pptx) (Editable PowerPoint Presentation deck)
 
 ---
 
 ## ✨ Features
 
-- **🚀 Real-Time Live Preview**: Debounced live compilation with safe `srcdoc` isolation and iframe sandboxing.
-- **🛠️ Integrated Virtual Console**: Intercepts `console.log`, `console.error`, `console.warn`, and `window.onerror` directly into an in-editor developer drawer.
+- **🚀 Real-Time Live Preview**: Debounced live compilation with safe `srcdoc` isolation and iframe sandboxing (`allow-scripts allow-modals`).
+- **🛠️ Integrated Virtual Console**: Intercepts `console.log`, `console.error`, `console.warn`, and `window.onerror` directly into an in-editor developer drawer via `postMessage`.
 - **🔢 Line Numbers & Gutter Sync**: Synchronized line numbering that dynamically updates with your code.
 - **⌨️ Code Editor Ergonomics**:
   - `Tab` key indents 2 spaces without losing cursor focus.
@@ -43,6 +42,31 @@ The project and training documentation reports (clean versions, zero college bra
 - **📦 One-Click Project Export**: Download your bundled project as a standalone HTML file containing styles and scripts.
 - **📱 Responsive Layout Switching**: Toggle between 3-column split view and single-tabbed view for small screens or focused editing.
 - **🖥️ Fullscreen Preview**: Expand the preview stage to full browser viewport with a single click.
+
+---
+
+## 📊 System Architecture & Workflow
+
+### 1. Execution & Compilation Lifecycle
+```text
+[User Types Code] ──► [Input Event] ──► [Auto-Run Active?]
+                                                │
+                                    ┌───────────┴───────────┐
+                                    ▼ Yes                   ▼ No
+                           [Debounce (350ms)]       [Wait for Run/Ctrl+Enter]
+                                    │                       │
+                                    └───────────┬───────────┘
+                                                ▼
+                                   [Construct Isolated Doc]
+                                   [Inject Console Proxy]
+                                                │
+                                                ▼
+                                    [Assign to iframe.srcdoc]
+                                                │
+                                                ▼
+                                  [Post Logs via postMessage]
+                                  [Render Live DOM in Stage]
+```
 
 ---
 
@@ -82,17 +106,20 @@ xdg-open index.html  # On Linux
 
 ```text
 CodeEditor/
-├── .github/workflows/deploy.yml # Automated GitHub Pages CI/CD
-├── docs/                        # Project reports & presentation deliverables
-│   ├── SmartCredit_Project_Report.pdf
-│   ├── smartCredit.pdf
-│   ├── smartCredit.pptx
-│   └── SmartCredit_Presentation_With_Title.pdf
-├── index.html                   # Modern semantic markup & accessible toolbar
-├── index.css                    # Dark theme, glassmorphic UI & responsive layouts
-├── index.js                     # Compiler, sandbox runner, virtual console & templates
-├── vercel.json                  # Vercel deployment cache-invalidation rules
-└── README.md                    # Documentation, guides & deliverable links
+├── .github/workflows/deploy.yml          # Automated GitHub Pages CI/CD
+├── assets/                               # High-res diagrams & flowcharts
+│   ├── codeeditor_dfd.png
+│   ├── codeeditor_flowchart.png
+│   └── codeeditor_ui_diagram.png
+├── docs/                                 # Project report & presentation deliverables
+│   ├── CodeEditor_Project_Report.pdf     # 14-page report (Direct Index, No College Name)
+│   ├── CodeEditor_Presentation.pdf       # 11-slide presentation PDF
+│   └── CodeEditor_Presentation.pptx      # PowerPoint deck
+├── index.html                            # Modern semantic markup & accessible toolbar
+├── index.css                             # Dark theme, glassmorphic UI & responsive layouts
+├── index.js                              # Compiler, sandbox runner, virtual console & templates
+├── vercel.json                           # Vercel deployment cache-invalidation rules
+└── README.md                             # Documentation, architecture & deliverable links
 ```
 
 ---
