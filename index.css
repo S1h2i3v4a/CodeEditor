@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CodeEditor Pro - Modern Dark UI Stylesheet
+   CodeEditor Pro - Modern Dark UI Stylesheet (v2.1.0)
    ========================================================================== */
 
 :root {
@@ -109,7 +109,7 @@ body {
 
 .header-center {
   flex: 1;
-  max-width: 300px;
+  max-width: 320px;
 }
 
 .template-selector-wrap {
@@ -118,7 +118,7 @@ body {
   gap: 8px;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  padding: 5px 10px;
+  padding: 5px 12px;
   border-radius: 6px;
   color: var(--text-muted);
   transition: border-color 0.2s;
@@ -213,13 +213,13 @@ body {
 .icon-btn.active {
   color: var(--accent-cyan);
   border-color: var(--accent-cyan);
-  background: rgba(56, 189, 248, 0.1);
+  background: rgba(56, 189, 248, 0.12);
 }
 
 .icon-btn.danger:hover {
   color: var(--accent-red);
   border-color: var(--accent-red);
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.12);
 }
 
 .view-toggles {
@@ -239,7 +239,7 @@ body {
 }
 
 .view-toggles .icon-btn.active {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   color: var(--text-main);
 }
 
@@ -326,7 +326,7 @@ body {
 .editor-tab.active {
   color: var(--text-main);
   border-bottom-color: var(--accent-cyan);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .tab-indicator {
@@ -340,42 +340,105 @@ body {
 .js-ind { background-color: var(--js-color); }
 
 /* ==========================================================================
-   Main Workspace Layout
+   Main Workspace Layouts
    ========================================================================== */
 .workspace {
   flex: 1;
   display: flex;
-  flex-direction: column;
   overflow: hidden;
   height: calc(100vh - 56px - 28px);
+  position: relative;
 }
 
-/* Split Pane Layout (Editors on top/left, Preview on bottom/right) */
-.editors-container {
+/* --- Layout 1: Side-by-Side (Desktop Default) --- */
+body.layout-side .workspace {
+  flex-direction: row;
+}
+
+body.layout-side .editors-container:not(.tabbed-mode) {
+  width: 50%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: 1fr;
+  border-right: 2px solid var(--border-color);
+  border-bottom: none;
+}
+
+body.layout-side .editors-container:not(.tabbed-mode) .pane {
+  border-right: none;
+  border-bottom: 1px solid var(--border-color);
+}
+
+body.layout-side .editors-container:not(.tabbed-mode) .pane:last-child {
+  border-bottom: none;
+}
+
+body.layout-side .output-container {
+  width: 50%;
+  height: 100%;
+}
+
+/* --- Layout 2: Top-Bottom Stack --- */
+body.layout-stack .workspace {
+  flex-direction: column;
+}
+
+body.layout-stack .editors-container:not(.tabbed-mode) {
+  width: 100%;
+  height: 52%;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  height: 52%;
+  grid-template-rows: 1fr;
   border-bottom: 2px solid var(--border-color);
-  background: var(--bg-darker);
-  position: relative;
-  overflow: hidden;
-}
-
-.pane {
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--border-color);
-  background: var(--bg-input);
-  overflow: hidden;
-  position: relative;
-}
-
-.pane:last-child {
   border-right: none;
 }
 
+body.layout-stack .editors-container:not(.tabbed-mode) .pane {
+  border-right: 1px solid var(--border-color);
+  border-bottom: none;
+}
+
+body.layout-stack .editors-container:not(.tabbed-mode) .pane:last-child {
+  border-right: none;
+}
+
+body.layout-stack .output-container {
+  width: 100%;
+  height: 48%;
+}
+
+/* --- Layout 3: Tabbed Mode (Single Active Pane) --- */
+.editors-container.tabbed-mode {
+  display: block !important;
+  width: 50% !important;
+  height: 100% !important;
+}
+
+body.layout-stack .editors-container.tabbed-mode {
+  width: 100% !important;
+  height: 52% !important;
+}
+
+.editors-container.tabbed-mode .pane {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+}
+
+/* Base Pane Elements */
+.pane {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-input);
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+}
+
 .pane-header {
-  height: 34px;
+  height: 32px;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
   padding: 0 12px;
@@ -389,32 +452,21 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
 .lang-icon {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
   padding: 2px 6px;
   border-radius: 4px;
   font-family: var(--font-mono);
 }
 
-.html-tag {
-  background: rgba(249, 115, 22, 0.15);
-  color: var(--html-color);
-}
-
-.css-tag {
-  background: rgba(6, 182, 212, 0.15);
-  color: var(--css-color);
-}
-
-.js-tag {
-  background: rgba(234, 179, 8, 0.15);
-  color: var(--js-color);
-}
+.html-tag { background: rgba(249, 115, 22, 0.15); color: var(--html-color); }
+.css-tag { background: rgba(6, 182, 212, 0.15); color: var(--css-color); }
+.js-tag { background: rgba(234, 179, 8, 0.15); color: var(--js-color); }
 
 .mini-btn {
   background: transparent;
@@ -444,6 +496,7 @@ body {
   position: relative;
   overflow: hidden;
   background-color: #0b0f14;
+  min-height: 0;
 }
 
 .line-numbers {
@@ -453,11 +506,12 @@ body {
   font-family: var(--font-mono);
   font-size: 0.85rem;
   line-height: 1.5;
-  padding: 12px 6px;
+  padding: 10px 6px;
   text-align: right;
   user-select: none;
   overflow: hidden;
   border-right: 1px solid rgba(255, 255, 255, 0.04);
+  box-sizing: border-box;
 }
 
 .code-input {
@@ -469,12 +523,13 @@ body {
   font-family: var(--font-mono);
   font-size: 0.85rem;
   line-height: 1.5;
-  padding: 12px 14px;
+  padding: 10px 14px;
   resize: none;
   white-space: pre;
   tab-size: 2;
   overflow-y: auto;
   overflow-x: auto;
+  box-sizing: border-box;
 }
 
 .code-input::placeholder {
@@ -491,6 +546,8 @@ body {
   background: #ffffff;
   position: relative;
   overflow: hidden;
+  min-height: 0;
+  min-width: 0;
 }
 
 .output-header {
@@ -528,6 +585,18 @@ body {
   100% { transform: scale(0.95); opacity: 0.8; }
 }
 
+.error-pill {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--accent-red);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  cursor: pointer;
+  font-weight: 600;
+  animation: pulseAnim 1.5s infinite;
+}
+
 .output-tools {
   display: flex;
   align-items: center;
@@ -547,6 +616,7 @@ body {
   flex: 1;
   width: 100%;
   height: 100%;
+  min-height: 0;
   position: relative;
   background: #ffffff;
 }
@@ -559,7 +629,9 @@ body {
   display: block;
 }
 
-/* Fullscreen Mode */
+/* ==========================================================================
+   Fullscreen Mode
+   ========================================================================== */
 body.preview-fullscreen .navbar,
 body.preview-fullscreen .editors-container,
 body.preview-fullscreen .statusbar,
@@ -569,7 +641,36 @@ body.preview-fullscreen .editor-tabs-bar {
 
 body.preview-fullscreen .workspace,
 body.preview-fullscreen .output-container {
+  width: 100vw !important;
   height: 100vh !important;
+}
+
+.exit-fullscreen-btn {
+  display: none;
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  background: rgba(13, 17, 23, 0.85);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s;
+}
+
+.exit-fullscreen-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+body.preview-fullscreen .exit-fullscreen-btn {
+  display: block;
 }
 
 /* ==========================================================================
@@ -580,7 +681,7 @@ body.preview-fullscreen .output-container {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 180px;
+  height: 190px;
   background: rgba(13, 17, 23, 0.98);
   border-top: 1px solid var(--border-color);
   backdrop-filter: blur(10px);
@@ -605,6 +706,7 @@ body.preview-fullscreen .output-container {
   justify-content: space-between;
   font-size: 0.78rem;
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .console-title {
@@ -631,8 +733,8 @@ body.preview-fullscreen .output-container {
 }
 
 .console-log-msg {
-  padding: 3px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   display: flex;
   gap: 8px;
   word-break: break-all;
@@ -641,7 +743,7 @@ body.preview-fullscreen .output-container {
 .console-system { color: var(--text-muted); font-style: italic; }
 .console-log { color: #d1d5db; }
 .console-warn { color: var(--accent-amber); background: rgba(245, 158, 11, 0.05); }
-.console-error { color: var(--accent-red); background: rgba(239, 68, 68, 0.08); }
+.console-error { color: var(--accent-red); background: rgba(239, 68, 68, 0.1); font-weight: 600; }
 .console-info { color: var(--accent-cyan); }
 
 /* ==========================================================================
@@ -720,13 +822,22 @@ body.preview-fullscreen .output-container {
 }
 
 @media (max-width: 900px) {
-  .editors-container {
-    grid-template-columns: 1fr;
-    height: 60%;
+  body.layout-side .workspace {
+    flex-direction: column !important;
   }
 
-  .editors-container:not(.tabbed-mode) .pane {
-    height: 33.33%;
+  body.layout-side .editors-container:not(.tabbed-mode) {
+    width: 100% !important;
+    height: 52% !important;
+    grid-template-rows: 1fr !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    border-right: none !important;
+    border-bottom: 2px solid var(--border-color) !important;
+  }
+
+  body.layout-side .output-container {
+    width: 100% !important;
+    height: 48% !important;
   }
 
   .header-center {

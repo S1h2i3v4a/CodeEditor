@@ -1,7 +1,7 @@
 /**
- * CodeEditor Pro - Modern Playground Core Logic
- * Fixes: Debounced srcdoc compilation, iframe console interception,
- * tab indentation, line numbering, templates, export, and persistence.
+ * CodeEditor Pro - Core Architecture & Live Runner (v2.1.0)
+ * Modern client-side playground with debounced compilation, isolated
+ * sandboxing, virtual console interception, layout modes, and persistence.
  */
 
 // DOM Elements
@@ -21,7 +21,8 @@ const downloadBtn = document.getElementById("downloadBtn");
 const autoRunToggle = document.getElementById("autoRunToggle");
 const templateSelect = document.getElementById("templateSelect");
 
-const layoutSplitBtn = document.getElementById("layoutSplitBtn");
+const layoutSideBtn = document.getElementById("layoutSideBtn");
+const layoutStackBtn = document.getElementById("layoutStackBtn");
 const layoutTabsBtn = document.getElementById("layoutTabsBtn");
 const editorTabsBar = document.getElementById("editorTabsBar");
 const editorsContainer = document.getElementById("editorsContainer");
@@ -32,35 +33,38 @@ const clearConsoleBtn = document.getElementById("clearConsoleBtn");
 const consoleDrawer = document.getElementById("consoleDrawer");
 const consoleBody = document.getElementById("consoleBody");
 const consoleBadge = document.getElementById("consoleBadge");
+const errorIndicator = document.getElementById("errorIndicator");
+const errorCountText = document.getElementById("errorCountText");
 
 const refreshPreviewBtn = document.getElementById("refreshPreviewBtn");
 const fullscreenPreviewBtn = document.getElementById("fullscreenPreviewBtn");
+const exitFullscreenBtn = document.getElementById("exitFullscreenBtn");
 
 const statusState = document.getElementById("statusState");
 const cursorPosition = document.getElementById("cursorPosition");
 const statsCount = document.getElementById("statsCount");
 const saveIndicator = document.getElementById("saveIndicator");
 
-// Application State
+// State
 let compileTimer = null;
 let errorCount = 0;
 let isTabbedMode = false;
 let activeTab = "html";
 
 // ==========================================================================
-// 1. Templates Repository
+// 1. Starter Templates
 // ==========================================================================
 const TEMPLATES = {
   counter: {
     html: `<div class="card">
-  <div class="badge">COUNTER APP</div>
+  <div class="badge">INTERACTIVE APP</div>
   <h1 id="count">0</h1>
   <div class="btn-group">
     <button id="decrement" class="btn btn-danger">-</button>
     <button id="reset" class="btn btn-secondary">Reset</button>
     <button id="increment" class="btn btn-success">+</button>
   </div>
-  <p class="hint">Click buttons or use keys (Arrow Up / Down)</p>
+  <p class="hint">Click buttons or use Arrow Up / Down keys</p>
 </div>`,
     css: `body {
   margin: 0;
@@ -148,7 +152,7 @@ function updateUI() {
   countEl.textContent = count;
   countEl.style.transform = 'scale(1.15)';
   setTimeout(() => countEl.style.transform = 'scale(1)', 150);
-  console.log('Current count value:', count);
+  console.log('Counter updated:', count);
 }
 
 incBtn.addEventListener('click', () => { count++; updateUI(); });
@@ -160,7 +164,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowDown') { count--; updateUI(); }
 });
 
-console.log('Counter App Ready! Try clicking + / -');`
+console.log('⚡ Counter App ready! Try clicking + / -');`
   },
 
   card: {
@@ -168,7 +172,7 @@ console.log('Counter App Ready! Try clicking + / -');`
   <div class="glass-card" id="card">
     <div class="logo">✦</div>
     <h2>Modern UI Card</h2>
-    <p>Move your cursor around this card to see real-time 3D tilt and illumination physics.</p>
+    <p>Move your cursor around this card to experience real-time 3D tilt and illumination physics.</p>
     <div class="tags">
       <span>HTML5</span>
       <span>CSS3 3D</span>
@@ -248,14 +252,14 @@ window.addEventListener('mousemove', (e) => {
   const rotateY = (mouseX / (window.innerWidth / 2)) * 25;
   const rotateX = -(mouseY / (window.innerHeight / 2)) * 25;
   
-  card.style.transform = \`rotateX(\${rotateX}deg) rotateY(\${rotateY}deg)\`;
+  card.style.transform = 'rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg)';
 });
 
 window.addEventListener('mouseleave', () => {
   card.style.transform = 'rotateX(0deg) rotateY(0deg)';
 });
 
-console.log('3D Card physics loaded');`
+console.log('✨ 3D Card physics loaded');`
   },
 
   particles: {
@@ -355,14 +359,14 @@ function animate() {
 }
 
 animate();
-console.log('Particles running smoothly at 60 FPS');`
+console.log('🌌 Particles running smoothly at 60 FPS');`
   },
 
   clock: {
     html: `<div class="clock-wrap">
   <div class="neon-time" id="time">00:00:00</div>
   <div class="date" id="date">Loading...</div>
-  <div class="mode">CYBERPUNK UTC CLOCK</div>
+  <div class="mode">CYBERPUNK UTC DIGITAL CLOCK</div>
 </div>`,
     css: `body {
   margin: 0;
@@ -417,7 +421,7 @@ console.log('Particles running smoothly at 60 FPS');`
 
 setInterval(updateClock, 1000);
 updateClock();
-console.log('Cyberpunk clock tick started');`
+console.log('⏱️ Cyberpunk clock initialized');`
   },
 
   blank: {
@@ -430,11 +434,11 @@ console.log('Cyberpunk clock tick started');`
 </head>
 <body>
   <h1>Hello, World!</h1>
-  <p>Start editing to build something amazing.</p>
+  <p>Start editing HTML, CSS, and JS to build something amazing.</p>
 </body>
 </html>`,
-    css: `/* Add your CSS styles */`,
-    js: `// Add your JavaScript logic\nconsole.log('Ready to code!');`
+    css: `/* Add your CSS styles */\nbody {\n  background: #f8fafc;\n  color: #1e293b;\n}`,
+    js: `// Add your JavaScript logic\nconsole.log('⚡ Ready to code!');`
   }
 };
 
@@ -445,11 +449,16 @@ function compileCode() {
   statusState.className = "status-pill status-compiling";
   statusState.innerHTML = '<span class="dot"></span> Compiling...';
 
+  // Reset errors on compile
+  errorCount = 0;
+  consoleBadge.style.display = "none";
+  errorIndicator.style.display = "none";
+
   const html = htmlInput.value;
   const css = cssInput.value;
   const js = jsInput.value;
 
-  // Interceptor script to bridge iframe console to parent virtual console
+  // Interceptor script to bridge iframe console & errors to parent drawer
   const consoleScript = `
     <script>
       (function() {
@@ -469,8 +478,12 @@ function compileCode() {
         }
 
         function sendMsg(type, args) {
-          const formatted = Array.from(args).map(serialize).join(' ');
-          window.parent.postMessage({ type: 'CONSOLE_LOG', level: type, msg: formatted }, '*');
+          try {
+            const formatted = Array.from(args).map(serialize).join(' ');
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ type: 'CONSOLE_LOG', level: type, msg: formatted }, '*');
+            }
+          } catch(e) {}
         }
 
         console.log = function() { sendMsg('log', arguments); _origLog.apply(console, arguments); };
@@ -479,11 +492,15 @@ function compileCode() {
         console.info = function() { sendMsg('info', arguments); _origInfo.apply(console, arguments); };
 
         window.onerror = function(message, source, lineno, colno, error) {
-          window.parent.postMessage({
-            type: 'CONSOLE_LOG',
-            level: 'error',
-            msg: 'Error: ' + message + (lineno ? ' (Line ' + lineno + ')' : '')
-          }, '*');
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({
+                type: 'CONSOLE_LOG',
+                level: 'error',
+                msg: 'Error: ' + message + (lineno ? ' (Line ' + lineno + ')' : '')
+              }, '*');
+            }
+          } catch(e) {}
           return false;
         };
       })();
@@ -505,20 +522,28 @@ function compileCode() {
       <body>
         ${html}
         <script>
+          window.addEventListener('DOMContentLoaded', function() {
+            try {
+              ${js}
+            } catch (err) {
+              console.error(err.stack || err.message);
+            }
+          });
+          // Also execute immediately for inline scripts
           try {
             ${js}
           } catch (err) {
-            console.error(err.message);
+            // Handled in DOMContentLoaded
           }
         <\/script>
       </body>
     </html>
   `;
 
-  // Safely assign to iframe srcdoc
+  // Assign to iframe srcdoc
   previewFrame.srcdoc = fullDocument;
 
-  // Save to localStorage
+  // Save to storage
   saveToStorage();
 
   setTimeout(() => {
@@ -576,7 +601,6 @@ function setupEditorEvents(textarea, gutter, lang) {
     syncScroll(textarea, gutter);
   });
 
-  // Cursor position tracking
   function updateCursor() {
     const text = textarea.value.substr(0, textarea.selectionStart);
     const line = text.split("\n").length;
@@ -587,7 +611,6 @@ function setupEditorEvents(textarea, gutter, lang) {
   textarea.addEventListener("keyup", updateCursor);
   textarea.addEventListener("click", updateCursor);
 
-  // Tab key & auto-closing brackets
   textarea.addEventListener("keydown", (e) => {
     if (e.key === "Tab") {
       e.preventDefault();
@@ -601,13 +624,13 @@ function setupEditorEvents(textarea, gutter, lang) {
       scheduleCompile();
     }
 
-    // Ctrl + S / Cmd + S -> Run & Prevent browser save
+    // Ctrl + S / Cmd + S
     if ((e.ctrlKey || e.metaKey) && e.key === "s") {
       e.preventDefault();
       compileCode();
     }
 
-    // Ctrl + Enter -> Force Run
+    // Ctrl + Enter
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
       compileCode();
@@ -630,6 +653,8 @@ window.addEventListener("message", (event) => {
       errorCount++;
       consoleBadge.style.display = "inline-block";
       consoleBadge.textContent = errorCount;
+      errorIndicator.style.display = "inline-flex";
+      errorCountText.textContent = `${errorCount} ${errorCount === 1 ? 'Error' : 'Errors'}`;
     } else if (level === "warn") {
       icon = "▲";
     } else if (level === "info") {
@@ -646,41 +671,79 @@ toggleConsoleBtn.addEventListener("click", () => {
   consoleDrawer.classList.toggle("open");
 });
 
+errorIndicator.addEventListener("click", () => {
+  consoleDrawer.classList.add("open");
+});
+
 closeConsoleBtn.addEventListener("click", () => {
   consoleDrawer.classList.remove("open");
 });
 
 clearConsoleBtn.addEventListener("click", () => {
-  consoleBody.innerHTML = '<div class="console-log-msg console-system">Console cleared.</div>';
+  consoleBody.innerHTML = '<div class="console-log-msg console-system">⚡ Console cleared.</div>';
   errorCount = 0;
   consoleBadge.style.display = "none";
+  errorIndicator.style.display = "none";
 });
 
 // ==========================================================================
-// 6. Format Code (Simple Auto-Indenter)
+// 6. Format Code (Robust Indenter)
 // ==========================================================================
 function formatCode() {
-  function beautifyLines(text) {
+  function formatHTML(text) {
     const lines = text.split("\n");
     let indent = 0;
-    const cleaned = lines.map((raw) => {
+    return lines.map(raw => {
       let l = raw.trim();
       if (!l) return "";
-      if (l.startsWith("}") || l.startsWith("</") || l.startsWith("]")) {
+      if (l.startsWith("</")) {
         indent = Math.max(0, indent - 1);
       }
-      const formatted = "  ".repeat(indent) + l;
-      if (l.endsWith("{") || (l.startsWith("<") && !l.includes("</") && !l.endsWith("/>") && !l.includes(">")) || l.endsWith("[")) {
+      const res = "  ".repeat(indent) + l;
+      if (l.startsWith("<") && !l.startsWith("</") && !l.endsWith("/>") && !l.includes("</")) {
         indent++;
       }
-      return formatted;
-    });
-    return cleaned.join("\n");
+      return res;
+    }).join("\n");
   }
 
-  htmlInput.value = beautifyLines(htmlInput.value);
-  cssInput.value = beautifyLines(cssInput.value);
-  jsInput.value = beautifyLines(jsInput.value);
+  function formatCSS(text) {
+    const lines = text.split("\n");
+    let indent = 0;
+    return lines.map(raw => {
+      let l = raw.trim();
+      if (!l) return "";
+      if (l.startsWith("}")) {
+        indent = Math.max(0, indent - 1);
+      }
+      const res = "  ".repeat(indent) + l;
+      if (l.endsWith("{")) {
+        indent++;
+      }
+      return res;
+    }).join("\n");
+  }
+
+  function formatJS(text) {
+    const lines = text.split("\n");
+    let indent = 0;
+    return lines.map(raw => {
+      let l = raw.trim();
+      if (!l) return "";
+      if (l.startsWith("}") || l.startsWith("]")) {
+        indent = Math.max(0, indent - 1);
+      }
+      const res = "  ".repeat(indent) + l;
+      if (l.endsWith("{") || l.endsWith("[")) {
+        indent++;
+      }
+      return res;
+    }).join("\n");
+  }
+
+  htmlInput.value = formatHTML(htmlInput.value);
+  cssInput.value = formatCSS(cssInput.value);
+  jsInput.value = formatJS(jsInput.value);
 
   updateAllLines();
   compileCode();
@@ -697,12 +760,17 @@ function loadTemplate(key) {
   cssInput.value = template.css;
   jsInput.value = template.js;
 
+  // Reset dropdown placeholder
+  templateSelect.value = "";
+
   updateAllLines();
   compileCode();
 }
 
 templateSelect.addEventListener("change", (e) => {
-  loadTemplate(e.target.value);
+  if (e.target.value) {
+    loadTemplate(e.target.value);
+  }
 });
 
 function saveToStorage() {
@@ -721,7 +789,12 @@ function restoreFromStorage() {
   const savedCss = localStorage.getItem("code_editor_css");
   const savedJs = localStorage.getItem("code_editor_js");
 
-  if (savedHtml !== null || savedCss !== null || savedJs !== null) {
+  // If saved buffer is non-empty, restore it; otherwise load starter template
+  const hasContent = (savedHtml && savedHtml.trim().length > 0) ||
+                     (savedCss && savedCss.trim().length > 0) ||
+                     (savedJs && savedJs.trim().length > 0);
+
+  if (hasContent) {
     htmlInput.value = savedHtml || "";
     cssInput.value = savedCss || "";
     jsInput.value = savedJs || "";
@@ -736,7 +809,9 @@ function restoreFromStorage() {
 // ==========================================================================
 // 8. Toolbar Actions: Run, Copy, Export, Clear, Fullscreen
 // ==========================================================================
-runBtn.addEventListener("click", compileCode);
+runBtn.addEventListener("click", () => {
+  compileCode();
+});
 
 refreshPreviewBtn.addEventListener("click", () => {
   compileCode();
@@ -744,6 +819,10 @@ refreshPreviewBtn.addEventListener("click", () => {
 
 fullscreenPreviewBtn.addEventListener("click", () => {
   document.body.classList.toggle("preview-fullscreen");
+});
+
+exitFullscreenBtn.addEventListener("click", () => {
+  document.body.classList.remove("preview-fullscreen");
 });
 
 document.querySelectorAll(".copy-btn").forEach((btn) => {
@@ -793,33 +872,39 @@ ${jsInput.value}
 });
 
 clearBtn.addEventListener("click", () => {
-  if (confirm("Are you sure you want to clear all editors?")) {
-    htmlInput.value = "";
-    cssInput.value = "";
-    jsInput.value = "";
-    updateAllLines();
-    compileCode();
+  if (confirm("Reset all editors to a blank canvas?")) {
+    loadTemplate("blank");
   }
 });
 
-// Layout Switcher (3-Column Split vs Single Tabbed)
-layoutSplitBtn.addEventListener("click", () => {
-  isTabbedMode = false;
-  layoutSplitBtn.classList.add("active");
-  layoutTabsBtn.classList.remove("active");
-  editorTabsBar.style.display = "none";
-  editorsContainer.classList.remove("tabbed-mode");
-  document.querySelectorAll(".pane").forEach((p) => (p.style.display = "flex"));
-});
+// Layout Switchers
+function setLayoutMode(mode) {
+  layoutSideBtn.classList.toggle("active", mode === "side");
+  layoutStackBtn.classList.toggle("active", mode === "stack");
+  layoutTabsBtn.classList.toggle("active", mode === "tabs");
 
-layoutTabsBtn.addEventListener("click", () => {
-  isTabbedMode = true;
-  layoutTabsBtn.classList.add("active");
-  layoutSplitBtn.classList.remove("active");
-  editorTabsBar.style.display = "flex";
-  editorsContainer.classList.add("tabbed-mode");
-  switchTab(activeTab);
-});
+  if (mode === "side") {
+    document.body.classList.add("layout-side");
+    document.body.classList.remove("layout-stack");
+    editorTabsBar.style.display = "none";
+    editorsContainer.classList.remove("tabbed-mode");
+    document.querySelectorAll(".pane").forEach((p) => (p.style.display = "flex"));
+  } else if (mode === "stack") {
+    document.body.classList.add("layout-stack");
+    document.body.classList.remove("layout-side");
+    editorTabsBar.style.display = "none";
+    editorsContainer.classList.remove("tabbed-mode");
+    document.querySelectorAll(".pane").forEach((p) => (p.style.display = "flex"));
+  } else if (mode === "tabs") {
+    editorTabsBar.style.display = "flex";
+    editorsContainer.classList.add("tabbed-mode");
+    switchTab(activeTab);
+  }
+}
+
+layoutSideBtn.addEventListener("click", () => setLayoutMode("side"));
+layoutStackBtn.addEventListener("click", () => setLayoutMode("stack"));
+layoutTabsBtn.addEventListener("click", () => setLayoutMode("tabs"));
 
 function switchTab(tab) {
   activeTab = tab;
@@ -837,13 +922,12 @@ document.querySelectorAll(".editor-tab").forEach((tabBtn) => {
   });
 });
 
-// Keyboard Shortcut: Global Ctrl+Enter to Run
+// Keyboard Shortcuts
 window.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
     e.preventDefault();
     compileCode();
   }
-  // Escape key exits fullscreen
   if (e.key === "Escape" && document.body.classList.contains("preview-fullscreen")) {
     document.body.classList.remove("preview-fullscreen");
   }
